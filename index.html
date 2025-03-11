@@ -67,38 +67,38 @@
         <div id="message" class="message"></div>
     </div>
 
-    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <!-- Use a specific version of Supabase JS to avoid version mismatch -->
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.42.0"></script>
     <script>
-        // Initialize Supabase client - corrected initialization
+        // Initialize Supabase client correctly
         const { createClient } = supabase;
-        const supabaseClient = createClient(
+        const supabase = createClient(
             'https://umxhdagnsxbqkgibmovn.supabase.co',
             'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InVteGhkYWduc3hicWtnaWJtb3ZuIiwicm9sZSI6ImFub24iLCJpYXQiOjE3MzQ4NDgwMTAsImV4cCI6MjA1MDQyNDAxMH0.uDLPbygcxoW6JFLjf21kJ-cXx-YU82RHxvhbSCm9lLM'
         );
 
-        // Extract token and type from URL hash or search params
+        // Extract token and type from URL
         let token, type;
-        if (window.location.hash) {
-            // Modern format with hash
+        const urlParams = new URLSearchParams(window.location.search);
+        token = urlParams.get('token'); // Modern Supabase uses query params
+        type = urlParams.get('type');
+
+        // Fallback to hash params for older flows (less common now)
+        if (!token && window.location.hash) {
             const hashParams = new URLSearchParams(window.location.hash.substring(1));
             token = hashParams.get('access_token');
             type = hashParams.get('type');
-        } else {
-            // Legacy format with query params
-            const urlParams = new URLSearchParams(window.location.search);
-            token = urlParams.get('token');
-            type = urlParams.get('type');
         }
 
-        console.log('Token:', token, 'Type:', type);
+        console.log('Extracted Token:', token, 'Type:', type);
 
         const form = document.getElementById('reset-form');
         const messageDiv = document.getElementById('message');
         const userEmailDiv = document.getElementById('user-email');
 
-        // Attempt to decode the token to get the email (works only with valid JWT)
+        // Attempt to decode the token to get the email (optional, for display)
         let userEmail = 'Unknown';
-        if (token && token.startsWith('ey')) {
+        if (token && token.includes('.')) { // Ensure it's a valid JWT
             try {
                 const payload = JSON.parse(atob(token.split('.')[1]));
                 userEmail = payload.email || 'Unknown';
@@ -118,19 +118,17 @@
             try {
                 console.log('Starting password reset process...');
                 console.log('Token:', token);
-                
-                // Use the recovery flow
-                const { data, error } = await supabaseClient.auth.exchangeCodeForSession(token);
-                
-                if (error) {
-                    throw error;
+
+                // Verify the token and update password directly
+                if (!token || type !== 'recovery') {
+                    throw new Error('Invalid or missing recovery token');
                 }
 
-                console.log('Session data:', data);
-
-                // Now update the password
-                const { error: updateError } = await supabaseClient.auth.updateUser({
+                // Use the correct method for password reset with token
+                const { error: updateError } = await supabase.auth.updateUser({
                     password: newPassword
+                }, {
+                    token: token // Pass the token if required by your setup
                 });
 
                 if (updateError) {
@@ -139,16 +137,16 @@
 
                 // Success
                 messageDiv.classList.remove('error');
-                messageDiv.textContent = 'Password reset successfully! You can now log in with your new password.';
+                messageDiv.textContent = 'Password reset successfully! Redirecting to login...';
                 form.reset();
 
-                // Optional: Redirect to login page after 3 seconds
+                // Redirect to login page after 3 seconds
                 setTimeout(() => {
                     window.location.href = '/login.html';
                 }, 3000);
-                
+
             } catch (error) {
-                console.error('Error:', error);
+                console.error('Error:', error.message);
                 messageDiv.classList.add('error');
                 messageDiv.textContent = 'Error: ' + (error.message || 'Failed to reset password');
             }
