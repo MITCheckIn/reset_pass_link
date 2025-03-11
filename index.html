@@ -1,0 +1,117 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Reset Password</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            margin: 0;
+            background-color: #f0f0f0;
+        }
+        .container {
+            background-color: white;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+            width: 300px;
+            text-align: center;
+        }
+        input[type="password"] {
+            width: 100%;
+            padding: 10px;
+            margin: 10px 0;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+        }
+        button {
+            background-color: #4CAF50;
+            color: white;
+            padding: 10px;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            width: 100%;
+        }
+        button:hover {
+            background-color: #45a049;
+        }
+        .message {
+            margin-top: 10px;
+            color: #333;
+        }
+        .error {
+            color: red;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h2>Reset Password</h2>
+        <form id="reset-form">
+            <label for="new-password">New Password:</label>
+            <input type="password" id="new-password" required>
+            <button type="submit">Reset Password</button>
+        </form>
+        <div id="message" class="message"></div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script>
+        // Initialize Supabase client
+        const supabase = Supabase.createClient(
+            'https://umxhdagnsxbqkgibmovn.supabase.co',
+            'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InVteGhkYWduc3hicWtnaWJtb3ZuIiwicm9sZSI6ImFub24iLCJpYXQiOjE3MzQ4NDgwMTAsImV4cCI6MjA1MDQyNDAxMH0.uDLPbygcxoW6JFLjf21kJ-cXx-YU82RHxvhbSCm9lLM'
+        );
+
+        // Extract token from URL
+        const urlParams = new URLSearchParams(window.location.search);
+        const token = urlParams.get('token');
+        const type = urlParams.get('type');
+
+        const form = document.getElementById('reset-form');
+        const messageDiv = document.getElementById('message');
+
+        form.addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const newPassword = document.getElementById('new-password').value;
+
+            if (!token || type !== 'recovery') {
+                messageDiv.classList.add('error');
+                messageDiv.textContent = 'Invalid or missing token/type in URL.';
+                return;
+            }
+
+            try {
+                // Verify the token and update the password
+                const { data, error } = await supabase.auth.verifyOtp({
+                    token: token,
+                    type: 'recovery'
+                });
+
+                if (error) throw error;
+
+                // Update the user's password
+                const { user, error: updateError } = await supabase.auth.updateUser({
+                    password: newPassword
+                });
+
+                if (updateError) throw updateError;
+
+                messageDiv.textContent = 'Password reset successful! Redirecting to login...';
+                setTimeout(() => {
+                    window.location.href = 'https://umxhdagnsxbqkgibmovn.supabase.co'; // Redirect to your login page
+                }, 2000);
+            } catch (error) {
+                messageDiv.classList.add('error');
+                messageDiv.textContent = 'Error: ' + error.message;
+            }
+        });
+    </script>
+</body>
+</html>
