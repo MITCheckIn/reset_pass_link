@@ -76,10 +76,21 @@
             'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InVteGhkYWduc3hicWtnaWJtb3ZuIiwicm9sZSI6ImFub24iLCJpYXQiOjE3MzQ4NDgwMTAsImV4cCI6MjA1MDQyNDAxMH0.uDLPbygcxoW6JFLjf21kJ-cXx-YU82RHxvhbSCm9lLM'
         );
 
-        // Extract token from URL
-        const urlParams = new URLSearchParams(window.location.search);
-        const token = urlParams.get('token');
-        const type = urlParams.get('type');
+        // Extract token and type from URL hash or search params
+        let token, type;
+        if (window.location.hash) {
+            // Modern format with hash
+            const hashParams = new URLSearchParams(window.location.hash.substring(1));
+            token = hashParams.get('access_token');
+            type = hashParams.get('type');
+        } else {
+            // Legacy format with query params
+            const urlParams = new URLSearchParams(window.location.search);
+            token = urlParams.get('token');
+            type = urlParams.get('type');
+        }
+
+        console.log('Token:', token, 'Type:', type);
 
         const form = document.getElementById('reset-form');
         const messageDiv = document.getElementById('message');
@@ -96,7 +107,6 @@
             }
         }
         userEmailDiv.textContent = `Resetting password for: ${userEmail}`;
-        console.log('Token:', token, 'Type:', type); // Debug token
 
         form.addEventListener('submit', async (e) => {
             e.preventDefault();
@@ -108,7 +118,16 @@
             try {
                 console.log('Starting password reset process...');
                 
-                // Update password directly using the recovery token
+                // First recover the session using the token
+                const { data: sessionData, error: sessionError } = await supabaseClient.auth.refreshSession({
+                    refresh_token: token
+                });
+
+                if (sessionError) {
+                    throw sessionError;
+                }
+
+                // Now update the password
                 const { data, error } = await supabaseClient.auth.updateUser({
                     password: newPassword
                 });
