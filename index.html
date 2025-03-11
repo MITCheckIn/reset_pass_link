@@ -48,11 +48,17 @@
         .error {
             color: red;
         }
+        #user-email {
+            margin-bottom: 10px;
+            font-style: italic;
+            color: #555;
+        }
     </style>
 </head>
 <body>
     <div class="container">
         <h2>Reset Password</h2>
+        <div id="user-email"></div>
         <form id="reset-form">
             <label for="new-password">New Password:</label>
             <input type="password" id="new-password" required>
@@ -76,6 +82,19 @@
 
         const form = document.getElementById('reset-form');
         const messageDiv = document.getElementById('message');
+        const userEmailDiv = document.getElementById('user-email');
+
+        // Attempt to decode the token to get the email (works only with valid JWT)
+        let userEmail = 'Unknown';
+        if (token && token.startsWith('ey')) {
+            try {
+                const payload = JSON.parse(atob(token.split('.')[1]));
+                userEmail = payload.email || 'Unknown';
+            } catch (e) {
+                console.error('Error decoding token:', e);
+            }
+        }
+        userEmailDiv.textContent = `Resetting password for: ${userEmail}`;
 
         form.addEventListener('submit', async (e) => {
             e.preventDefault();
@@ -88,26 +107,33 @@
             }
 
             try {
-                // Verify the token and update the password
-                const { data, error } = await supabase.auth.verifyOtp({
+                // Step 1: Verify the recovery token
+                const { data, error: verifyError } = await supabase.auth.verifyOtp({
                     token: token,
                     type: 'recovery'
                 });
 
-                if (error) throw error;
+                if (verifyError) {
+                    console.error('Verification error:', verifyError);
+                    throw verifyError;
+                }
 
-                // Update the user's password
+                // Step 2: Update the user's password
                 const { user, error: updateError } = await supabase.auth.updateUser({
                     password: newPassword
                 });
 
-                if (updateError) throw updateError;
+                if (updateError) {
+                    console.error('Update error:', updateError);
+                    throw updateError;
+                }
 
-                messageDiv.textContent = 'Password reset successful! Redirecting to login...';
-                setTimeout(() => {
-                    window.location.href = 'https://umxhdagnsxbqkgibmovn.supabase.co'; // Redirect to your login page
-                }, 2000);
+                // Show a pop-up alert for success
+                alert('Password reset successfully! You can now log in with your new password.');
+                form.reset();
+                messageDiv.textContent = 'Password reset successfully!';
             } catch (error) {
+                console.error('Error:', error);
                 messageDiv.classList.add('error');
                 messageDiv.textContent = 'Error: ' + error.message;
             }
