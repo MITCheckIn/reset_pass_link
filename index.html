@@ -118,21 +118,13 @@
             try {
                 console.log('Starting password reset process...');
                 
-                // First recover the session using the token
-                const { data: sessionData, error: sessionError } = await supabaseClient.auth.refreshSession({
-                    refresh_token: token
-                });
-
-                if (sessionError) {
-                    throw sessionError;
-                }
-
-                // Now update the password
-                const { data, error } = await supabaseClient.auth.updateUser({
+                // Use resetPasswordForEmail with the token
+                const { data, error } = await supabaseClient.auth.resetPasswordForEmail(null, {
+                    token: token,
                     password: newPassword
                 });
 
-                console.log('Update response:', data, 'Update error:', error);
+                console.log('Reset response:', data, 'Reset error:', error);
 
                 if (error) {
                     throw error;
