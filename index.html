@@ -111,9 +111,23 @@
             messageDiv.classList.remove('error');
 
             try {
-                // Update user password using the recovery token
+                // First verify the recovery token
+                const { data: verifyData, error: verifyError } = await supabase.auth.verifyOtp({
+                    token: token,
+                    type: 'recovery'
+                });
+
+                if (verifyError) {
+                    throw verifyError;
+                }
+
+                // Then update the password using the session from the verified token
                 const { data, error } = await supabase.auth.updateUser({
                     password: newPassword
+                }, {
+                    headers: {
+                        Authorization: `Bearer ${verifyData.session.access_token}`
+                    }
                 });
 
                 if (error) {
@@ -127,7 +141,7 @@
 
                 // Optional: Redirect to login page after 3 seconds
                 setTimeout(() => {
-                    window.location.href = '/login.html'; // Adjust the login page URL as needed
+                    window.location.href = '/login.html';
                 }, 3000);
                 
             } catch (error) {
