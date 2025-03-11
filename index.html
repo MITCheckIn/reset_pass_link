@@ -69,8 +69,9 @@
 
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <script>
-        // Initialize Supabase client
-        const supabase = supabase.createClient(
+        // Initialize Supabase client - corrected initialization
+        const { createClient } = supabase;
+        const supabaseClient = createClient(
             'https://umxhdagnsxbqkgibmovn.supabase.co',
             'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InVteGhkYWduc3hicWtnaWJtb3ZuIiwicm9sZSI6ImFub24iLCJpYXQiOjE3MzQ4NDgwMTAsImV4cCI6MjA1MDQyNDAxMH0.uDLPbygcxoW6JFLjf21kJ-cXx-YU82RHxvhbSCm9lLM'
         );
@@ -115,7 +116,7 @@
                 
                 // First verify the recovery token
                 console.log('Verifying token:', token);
-                const { data: verifyData, error: verifyError } = await supabase.auth.verifyOtp({
+                const { data: verifyData, error: verifyError } = await supabaseClient.auth.verifyOtp({
                     token: token,
                     type: 'recovery'
                 });
@@ -127,10 +128,9 @@
                 }
 
                 console.log('Token verified, updating password...');
-                console.log('Session token:', verifyData.session.access_token);
-
-                // Then update the password using the session from the verified token
-                const { data, error } = await supabase.auth.updateUser({
+                
+                // Then update the password
+                const { data, error } = await supabaseClient.auth.updateUser({
                     password: newPassword
                 });
 
