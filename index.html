@@ -102,34 +102,13 @@
             e.preventDefault();
             const newPassword = document.getElementById('new-password').value;
 
-            if (!token || type !== 'recovery') {
-                messageDiv.classList.add('error');
-                messageDiv.textContent = 'Invalid or missing token/type in URL.';
-                return;
-            }
-
             messageDiv.textContent = 'Processing...';
             messageDiv.classList.remove('error');
 
             try {
                 console.log('Starting password reset process...');
                 
-                // First verify the recovery token
-                console.log('Verifying token:', token);
-                const { data: verifyData, error: verifyError } = await supabaseClient.auth.verifyOtp({
-                    token: token,
-                    type: 'recovery'
-                });
-
-                console.log('Verify response:', verifyData, 'Verify error:', verifyError);
-
-                if (verifyError) {
-                    throw verifyError;
-                }
-
-                console.log('Token verified, updating password...');
-                
-                // Then update the password
+                // Update password directly using the recovery token
                 const { data, error } = await supabaseClient.auth.updateUser({
                     password: newPassword
                 });
