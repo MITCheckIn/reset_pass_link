@@ -117,33 +117,24 @@
 
             try {
                 console.log('Starting password reset process...');
+                console.log('Token:', token);
                 
-                // First get the user's email from the token
-                let userEmail = '';
-                if (token && token.split('.').length === 3) {
-                    try {
-                        const payload = JSON.parse(atob(token.split('.')[1]));
-                        userEmail = payload.email;
-                        console.log('Email from token:', userEmail);
-                    } catch (e) {
-                        console.error('Error decoding token:', e);
-                    }
+                // Use the recovery flow
+                const { data, error } = await supabaseClient.auth.exchangeCodeForSession(token);
+                
+                if (error) {
+                    throw error;
                 }
 
-                if (!userEmail) {
-                    throw new Error('Could not find email in recovery token');
-                }
+                console.log('Session data:', data);
 
-                // Now update the password with both email and token
-                const { data, error } = await supabaseClient.auth.updateUser({
-                    email: userEmail,
+                // Now update the password
+                const { error: updateError } = await supabaseClient.auth.updateUser({
                     password: newPassword
                 });
 
-                console.log('Update response:', data, 'Update error:', error);
-
-                if (error) {
-                    throw error;
+                if (updateError) {
+                    throw updateError;
                 }
 
                 // Success
