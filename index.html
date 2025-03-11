@@ -76,15 +76,13 @@
             'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InVteGhkYWduc3hicWtnaWJtb3ZuIiwicm9sZSI6ImFub24iLCJpYXQiOjE3MzQ4NDgwMTAsImV4cCI6MjA1MDQyNDAxMH0.uDLPbygcxoW6JFLjf21kJ-cXx-YU82RHxvhbSCm9lLM'
         );
 
-        // Extract token and type from URL hash or search params
+        // Extract token from URL hash
         let token, type;
         if (window.location.hash) {
-            // Modern format with hash
             const hashParams = new URLSearchParams(window.location.hash.substring(1));
-            token = hashParams.get('access_token');
+            token = hashParams.get('token') || hashParams.get('access_token');
             type = hashParams.get('type');
         } else {
-            // Legacy format with query params
             const urlParams = new URLSearchParams(window.location.search);
             token = urlParams.get('token');
             type = urlParams.get('type');
@@ -118,9 +116,13 @@
             try {
                 console.log('Starting password reset process...');
                 
+                if (!token) {
+                    throw new Error('No recovery token found in URL');
+                }
+
                 // First verify the recovery token
                 const { data, error } = await supabaseClient.auth.verifyOtp({
-                    token: token,
+                    token_hash: token,
                     type: 'recovery'
                 });
 
