@@ -111,24 +111,30 @@
             messageDiv.classList.remove('error');
 
             try {
+                console.log('Starting password reset process...');
+                
                 // First verify the recovery token
+                console.log('Verifying token:', token);
                 const { data: verifyData, error: verifyError } = await supabase.auth.verifyOtp({
                     token: token,
                     type: 'recovery'
                 });
 
+                console.log('Verify response:', verifyData, 'Verify error:', verifyError);
+
                 if (verifyError) {
                     throw verifyError;
                 }
 
+                console.log('Token verified, updating password...');
+                console.log('Session token:', verifyData.session.access_token);
+
                 // Then update the password using the session from the verified token
                 const { data, error } = await supabase.auth.updateUser({
                     password: newPassword
-                }, {
-                    headers: {
-                        Authorization: `Bearer ${verifyData.session.access_token}`
-                    }
                 });
+
+                console.log('Update response:', data, 'Update error:', error);
 
                 if (error) {
                     throw error;
