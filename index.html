@@ -72,7 +72,7 @@
         // Initialize Supabase client
         const supabase = Supabase.createClient(
             'https://umxhdagnsxbqkgibmovn.supabase.co',
-            'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InVteGhkYWduc3hicWtnaWJtb3ZuIiwicm9sZSI6ImFub24iLCJpYXQiOjE3MzQ4NDgwMTAsImV4cCI6MjA1MDQyNDAxMH0.uDLPbygcxoW6JFLjf21kJ-cXx-YU82RHxvhbSCm9lLM'
+            'YOUR_ANON_KEY'
         );
 
         // Extract token from URL
@@ -95,9 +95,10 @@
             }
         }
         userEmailDiv.textContent = `Resetting password for: ${userEmail}`;
+        console.log('Token:', token, 'Type:', type); // Debug token
 
         form.addEventListener('submit', async (e) => {
-            e.preventDefault();
+            e.preventDefault(); // Ensure page doesn't reload
             const newPassword = document.getElementById('new-password').value;
 
             if (!token || type !== 'recovery') {
@@ -105,6 +106,9 @@
                 messageDiv.textContent = 'Invalid or missing token/type in URL.';
                 return;
             }
+
+            messageDiv.textContent = 'Processing...'; // Show processing state
+            messageDiv.classList.remove('error');
 
             try {
                 // Step 1: Verify the recovery token
@@ -128,14 +132,14 @@
                     throw updateError;
                 }
 
-                // Show a pop-up alert for success
+                // Success: Show pop-up and update message
                 alert('Password reset successfully! You can now log in with your new password.');
                 form.reset();
                 messageDiv.textContent = 'Password reset successfully!';
             } catch (error) {
                 console.error('Error:', error);
                 messageDiv.classList.add('error');
-                messageDiv.textContent = 'Error: ' + error.message;
+                messageDiv.textContent = 'Error: ' + (error.message || 'Failed to reset password');
             }
         });
     </script>
